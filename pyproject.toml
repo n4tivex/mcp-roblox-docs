@@ -1,0 +1,55 @@
+[project]
+name = "mcp-roblox-docs"
+version = "3.3.0"
+description = "MCP Server for Roblox Studio Documentation - Complete API reference, FastFlags, Open Cloud API, Luau language docs, DataTypes, Libraries, DevForum search, and more"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Native" }]
+keywords = ["roblox", "mcp", "documentation", "api", "studio", "luau", "opencloud", "fastflags", "datatypes"]
+
+dependencies = [
+    "mcp[cli]>=1.2.0",
+    "httpx>=0.27.0",
+    "orjson>=3.10.0",
+    "platformdirs>=4.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+mcp-roblox-docs = "src.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.mcp-roblox-docs]
+# Default configuration
+language = "en-us"
+cache_dir = "./cache"
+auto_sync = true
+sync_interval_hours = 24
+max_search_results = 25
+devforum_cache_minutes = 60
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
