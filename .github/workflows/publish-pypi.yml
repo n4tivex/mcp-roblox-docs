@@ -55,9 +55,19 @@ jobs:
             exit 1
           fi
 
+      - name: Skip manual runs unless ref is a version tag
+        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "This workflow publishes releases and must run from a version tag (vX.Y.Z)."
+          echo "Manual run from branch '${GITHUB_REF_NAME}' will exit without publishing."
+          exit 0
+
       - name: Check if version already exists on PyPI
         id: pypi_exists
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
+          # curl -f fails for any HTTP error (including package/version not found),
+          # which we treat as "version does not exist yet" and safe to publish.
           if curl -fsS "https://pypi.org/pypi/${{ steps.versions.outputs.package_name }}/${{ steps.versions.outputs.package_version }}/json" > /dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Version already exists on PyPI, publish will be skipped."
@@ -67,14 +77,17 @@ jobs:
           fi
 
       - name: Install build tools
+        if: startsWith(github.ref, 'refs/tags/') && steps.pypi_exists.outputs.exists != 'true'
         run: python -m pip install --upgrade build twine
 
       - name: Build package
+        if: startsWith(github.ref, 'refs/tags/') && steps.pypi_exists.outputs.exists != 'true'
         run: python -m build
 
       - name: Validate package artifacts
+        if: startsWith(github.ref, 'refs/tags/') && steps.pypi_exists.outputs.exists != 'true'
         run: python -m twine check dist/*
 
       - name: Publish package to PyPI
-        if: steps.pypi_exists.outputs.exists != 'true'
+        if: startsWith(github.ref, 'refs/tags/') && steps.pypi_exists.outputs.exists != 'true'
         uses: pypa/gh-action-pypi-publish@release/v1

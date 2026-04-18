@@ -339,8 +339,8 @@ uv run python -c "from src.server import mcp; print('Tools:', len(mcp._tool_mana
  3. Create and push a matching tag:
 
  ```bash
- git tag v3.3.1
- git push origin v3.3.1
+ git tag vX.Y.Z
+ git push origin vX.Y.Z
  ```
 
  The workflow will:
