@@ -361,6 +361,9 @@ uv run python -c "from src.server import mcp; print('Tools:', len(mcp._tool_mana
 
 ## Changelog
 
+### v3.3.1 (2026-04-18)
+- Updated changelog entry for the `3.3.1` release.
+
 ### v3.3.0 (2026-01-25)
 **Full MCP Primitives Implementation**
 - Added MCP Resources (5 resource templates):
