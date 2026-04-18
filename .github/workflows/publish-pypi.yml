@@ -1,0 +1,80 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read package and tag version
+        id: versions
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+
+          ref_name = os.environ.get("GITHUB_REF_NAME", "")
+          tag_version = ref_name[1:] if ref_name.startswith("v") else ref_name
+
+          with open("pyproject.toml", "rb") as f:
+              pyproject = tomllib.load(f)
+
+          package_name = pyproject["project"]["name"]
+          package_version = pyproject["project"]["version"]
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"package_name={package_name}\n")
+              out.write(f"package_version={package_version}\n")
+              out.write(f"tag_version={tag_version}\n")
+          PY
+
+      - name: Validate tag version matches pyproject version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          if [ "${{ steps.versions.outputs.package_version }}" != "${{ steps.versions.outputs.tag_version }}" ]; then
+            echo "Tag version v${{ steps.versions.outputs.tag_version }} does not match pyproject version ${{ steps.versions.outputs.package_version }}"
+            exit 1
+          fi
+
+      - name: Check if version already exists on PyPI
+        id: pypi_exists
+        run: |
+          if curl -fsS "https://pypi.org/pypi/${{ steps.versions.outputs.package_name }}/${{ steps.versions.outputs.package_version }}/json" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Version already exists on PyPI, publish will be skipped."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Version not found on PyPI, publish will proceed."
+          fi
+
+      - name: Install build tools
+        run: python -m pip install --upgrade build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Validate package artifacts
+        run: python -m twine check dist/*
+
+      - name: Publish package to PyPI
+        if: steps.pypi_exists.outputs.exists != 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
