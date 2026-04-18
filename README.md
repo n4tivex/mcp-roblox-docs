@@ -323,12 +323,41 @@ uv run mcp-roblox-docs
 # Test tool count
 uv run python -c "from src.server import mcp; print('Tools:', len(mcp._tool_manager._tools))"
 
-# Build for distribution
-uv build
+ # Build for distribution
+ uv build
+ 
+ # Run tests
+ python -m pytest
+ ```
 
-# Publish to PyPI
-uv publish
-```
+ ### Release & Publish to PyPI (Automated)
+
+ PyPI publishing is now automated via GitHub Actions (`.github/workflows/publish-pypi.yml`) when a version tag is pushed.
+
+ 1. Bump `version` in `pyproject.toml`
+ 2. Run tests: `python -m pytest`
+ 3. Commit and push changes
+ 4. Create and push a matching tag:
+
+ ```bash
+ git tag vX.Y.Z
+ git push origin vX.Y.Z
+ ```
+
+ The workflow will:
+ - Validate tag version matches `pyproject.toml`
+ - Build package and validate artifacts (`twine check`)
+ - Skip publish if the same version already exists on PyPI
+ - Publish to PyPI using Trusted Publisher (OIDC)
+
+ ### One-time PyPI Trusted Publisher Setup
+
+ In PyPI project settings:
+ - Go to **Publishing** → **Add a new pending publisher**
+ - Owner: `n4tivex`
+ - Repository: `mcp-roblox-docs`
+ - Workflow name: `publish-pypi.yml`
+ - Environment name: `pypi`
 
 ## Changelog
 
