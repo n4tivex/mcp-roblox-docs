@@ -341,11 +341,34 @@ class DataLoader:
 
         self._docs_map = {}
 
-        # API docs structure varies, try to normalize
+        # API docs structure varies, normalize to:
+        # {ClassName: {"description": "...", MemberName: {"description": "..."}}}
         for key, value in self._api_docs.items():
-            if isinstance(value, dict):
-                self._docs_map[key] = value
-                self._docs_map[key.lower()] = value
+            if not isinstance(value, dict):
+                continue
+
+            class_name = key
+            member_name: str | None = None
+
+            # New api-docs keys use fully-qualified names:
+            # @roblox/globaltype/ClassName.MemberName
+            if key.startswith("@roblox/globaltype/"):
+                qualified_name = key.removeprefix("@roblox/globaltype/")
+                class_name, sep, remainder = qualified_name.partition(".")
+                member_name = remainder if sep else None
+
+            class_docs = self._docs_map.get(class_name) or self._docs_map.get(class_name.lower())
+            if class_docs is None:
+                class_docs = {}
+
+            if member_name:
+                class_docs[member_name] = value
+                class_docs[member_name.lower()] = value
+            else:
+                class_docs.update(value)
+
+            self._docs_map[class_name] = class_docs
+            self._docs_map[class_name.lower()] = class_docs
 
     def _get_inheritance_chain(self, class_name: str) -> list[str]:
         """Get full inheritance chain for a class."""
