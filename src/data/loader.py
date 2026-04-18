@@ -335,17 +335,47 @@ class DataLoader:
         )
 
     def _build_docs_map(self) -> None:
-        """Build documentation lookup map."""
+        """Build documentation lookup map.
+
+        The api-docs JSON uses keys like '@roblox/globaltype/ClassName.MemberName'
+        with a 'documentation' field. We parse these into a nested structure:
+        {class_name: {member_name: {"description": "..."}}} so that
+        get_class_doc("ClassName") returns {member_name: {"description": "..."}}.
+        """
         if self._api_docs is None:
             return
 
         self._docs_map = {}
 
-        # API docs structure varies, try to normalize
         for key, value in self._api_docs.items():
-            if isinstance(value, dict):
-                self._docs_map[key] = value
-                self._docs_map[key.lower()] = value
+            if not isinstance(value, dict):
+                continue
+
+            doc_text = value.get("documentation", "")
+
+            # Parse @roblox/globaltype/ClassName.MemberName keys
+            if key.startswith("@roblox/globaltype/"):
+                path = key[len("@roblox/globaltype/"):]
+                if "." in path:
+                    class_name, member_name = path.split(".", 1)
+                    # Skip nested paths like ClassName.Event.Connect
+                    if "." in member_name:
+                        continue
+                    if class_name not in self._docs_map:
+                        self._docs_map[class_name] = {}
+                        self._docs_map[class_name.lower()] = self._docs_map[class_name]
+                    self._docs_map[class_name][member_name] = {"description": doc_text}
+                else:
+                    # Class-level doc (no member)
+                    class_name = path
+                    if class_name not in self._docs_map:
+                        self._docs_map[class_name] = {}
+                        self._docs_map[class_name.lower()] = self._docs_map[class_name]
+                    self._docs_map[class_name]["_class"] = {"description": doc_text}
+
+            # Also store raw key for any other lookups
+            self._docs_map[key] = value
+            self._docs_map[key.lower()] = value
 
     def _get_inheritance_chain(self, class_name: str) -> list[str]:
         """Get full inheritance chain for a class."""
