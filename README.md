@@ -335,8 +335,9 @@ uv run python -c "from src.server import mcp; print('Tools:', len(mcp._tool_mana
  PyPI publishing is now automated via GitHub Actions (`.github/workflows/publish-pypi.yml`) when a version tag is pushed.
 
  1. Bump `version` in `pyproject.toml`
- 2. Commit and push changes
- 3. Create and push a matching tag:
+ 2. Run tests: `python -m pytest`
+ 3. Commit and push changes
+ 4. Create and push a matching tag:
 
  ```bash
  git tag vX.Y.Z
