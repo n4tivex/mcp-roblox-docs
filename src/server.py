@@ -65,7 +65,7 @@ from typing import Any
 
 import httpx
 import platformdirs
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from src.data.loader import DataLoader
 from src.data.syncer import DataSyncer, AVAILABLE_LANGUAGES, LUAU_DOCS_TOPICS
@@ -125,7 +125,7 @@ logger = logging.getLogger("mcp-roblox-docs")
 CACHE_DIR = Path(platformdirs.user_cache_dir("mcp-roblox-docs"))
 
 # Initialize FastMCP server
-mcp = FastMCP("roblox-docs")
+mcp = MCPServer("roblox-docs")                                                          
 
 # Global state (initialized on startup)
 _loader: DataLoader | None = None
